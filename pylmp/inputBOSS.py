@@ -261,12 +261,30 @@ def get_zmat(file, res):
     print('RES.z saved!')
 
 
-def genzmat(file, res):
+def Get_OPT(zmat):
+    assert 'BOSSdir' in os.environ, '''Please Make sure $BOSSdir is defined
+    xZCM1A and related files are in scripts directory of BOSS'''
+
+    print('MOLECULE HAS A CHARGE of %d' % 0.0)
 
     # Log file (olog)
     os.system("rm -vf olog")
     os.system("touch olog")
 
+    execfile = os.environ['BOSSdir'] + '/scripts/xZCM1A >> olog'
+    command = execfile + ' ' + zmat[:-2]
+    os.system(command)
+    os.system('cp sum %s' % (zmat))
+
+    execfile = os.environ['BOSSdir'] + '/scripts/xSPM >> olog'
+    command = execfile + ' ' + zmat[:-2]
+    os.system(command)
+    os.system('cp sum %s' % (zmat))
+
+
+def genzmat(file, res):
+
     # save RES.z initial
     get_zmat(file, res)
-    pass
+
+    Get_OPT("%s.z" % res)
