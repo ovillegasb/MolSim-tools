@@ -5,6 +5,7 @@ Modulo dedicado a prepara el archivo de entrada para ser tratado por BOSS.
 
 import os
 import pylmp.algebra_tools as alg
+import networkx as nx
 
 
 def readmolfile(lines):
@@ -37,6 +38,61 @@ def readmolfile(lines):
     return coord, atypes, bonds
 
 
+def make_graphs(atoms, coos, bonds):
+    G = nx.DiGraph()
+
+    # Add nodes using atom types and coordinate.
+    for i in coos.keys():
+        G.add_node(
+            i,
+            XYZ=coos[i],
+            elem=atoms[i],
+            atno=alg.bossElement2Num(atoms[i])
+        )
+
+    for (i, j, rij) in zip(bonds['BI'], bonds['BJ'], bonds['RIJ']):
+        G.add_edge(i, j, distance=rij)
+        G.add_edge(j, i, distance=rij)
+
+    all_ps = dict(nx.algorithms.all_pairs_shortest_path_length(G))
+    all_paths = []
+
+    for s in all_ps.keys():
+        for e in all_ps[s].keys():
+            if all_ps[s][e] == 1:
+                all_paths += list(nx.algorithms.all_simple_paths(G, s, e, cutoff=1))
+
+            elif all_ps[s][e] == 2:
+                all_paths += list(nx.algorithms.all_simple_paths(G, s, e, cutoff=2))
+
+            elif all_ps[s][e] == 3:
+                all_paths += list(nx.algorithms.all_simple_paths(G, s, e, cutoff=3))
+
+    all_bonds = [p for p in all_paths if len(set(p)) == 2]
+    new_angs = [p for p in all_paths if len(set(p)) == 3]
+    new_tors = [p for p in all_paths if len(set(p)) == 4]
+
+    dict_new_tors = {alg.tor_id(t): t for t in new_tors}
+    dict_new_angs = {alg.ang_id(t): t for t in new_angs}
+
+    imp_keys = [n for n in G.nodes() if G.degree(n) / 2 == 3]
+    all_imps = {}
+    for i in imp_keys:
+        nei = list(G.neighbors(i))
+        if G.nodes[i]['atno'] == 6:
+            all_imps[i] = [nei[0], i, nei[1], nei[2]]
+    MOL_ICOORDS = {'BONDS': all_bonds,
+                   'ANGLES': dict_new_angs,
+                   'TORSIONS': dict_new_tors,
+                   'IMPROPERS': all_imps
+                   }
+
+    print(MOL_ICOORDS)
+    exit()
+
+    return G, MOL_ICOORDS
+
+
 def get_zmat(file, res):
     """Build a initial file RES.z from input file.mol."""
 
@@ -45,6 +101,9 @@ def get_zmat(file, res):
 
     # extract information from mol file
     coord, atypes, bonds = readmolfile(lines)
+
+    # Extract connectivity using networkx
+    G_mol, mol_icords = make_graphs(atypes, coord, bonds)
 
     print('RES.z saved!')
 
