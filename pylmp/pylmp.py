@@ -4,6 +4,11 @@ y la exportacion de la informacion.
 
 """
 
+from pylmp.inputBOSS import genzmat
 
-def save_topol():
-    pass
+
+def save_topol(file, res):
+    """Save topology."""
+
+    # save RES.z
+    genzmat(file, res)

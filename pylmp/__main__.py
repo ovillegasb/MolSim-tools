@@ -29,6 +29,7 @@ xZCM1A
 
 import argparse
 import time
+from pylmp.pylmp import save_topol
 
 
 def options():
@@ -68,6 +69,8 @@ args = options()
 
 resname = args['r']
 file = args['f']
+
+save_topol(file, resname)
 
 t1 = time.time() - t0
 print("Done in %.0f s" % t1)
