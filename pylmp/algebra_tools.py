@@ -16,6 +16,51 @@ def Distance(u, v):
     return lg.norm(u - v)
 
 
+def angle(p0, p1, p2):
+    """Return angle [0..pi] between two vectors."""
+    p0 = np.array(p0)
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+
+    v0 = p0 - p1
+    v1 = p2 - p1
+
+    cos_a = np.dot(v0, v1) / lg.norm(v0) / lg.norm(v1)
+
+    return 180.0 * np.arccos(round(cos_a, 3)) * 7.0 / 22.0
+
+
+def dihedral(p0, p1, p2, p3):
+    """Return angle [0..2*pi] formed by vertices p0-p1-p2-p3."""
+
+    p0 = np.array(p0)
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    p3 = np.array(p3)
+
+    def Mol_angle(v0, v1):
+        """Return angle [0..pi] between two vectors."""
+        cos_a = round(np.dot(v0, v1) / lg.norm(v0) / lg.norm(v1), 3)
+        return np.arccos(cos_a)
+
+    v01 = p0 - p1
+    v32 = p3 - p2
+    v12 = p1 - p2
+
+    v0 = np.cross(v12, v01)
+    v3 = np.cross(v12, v32)
+    # The cross product vectors are both normal to the axis
+    # vector v12, so the angle between them is the dihedral
+    # angle that we are looking for.  However, since "angle"
+    # only returns values between 0 and pi, we need to make
+    # sure we get the right sign relative to the rotation axis
+    a = Mol_angle(v0, v3)
+    if np.dot(np.cross(v0, v3), v12) > 0:
+        a = -a
+
+    return a * 180.0 * 7.0 / 22.0
+
+
 def pairing_func(a, b):
     ans = (a + b) * (a + b + 1) * 0.5
     if a > b:
